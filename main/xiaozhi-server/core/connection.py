@@ -665,12 +665,12 @@ class ConnectionHandler:
         # 更新系统prompt至上下文
         self.dialogue.update_system_message(self.prompt)
 
-    def chat(self, query, tool_call=False, depth=0):
-        self.logger.bind(tag=TAG).info(f"大模型收到用户消息: {query}")
+    def chat(self, query, tool_call=False, depth=0, role="user"):
+        self.logger.bind(tag=TAG).info(f"大模型收到{role}消息: {query}")
         self.llm_finish_task = False
 
         if not tool_call:
-            self.dialogue.put(Message(role="user", content=query))
+            self.dialogue.put(Message(role=role, content=query))
 
         # 为最顶层时新建会话ID和发送FIRST请求
         if depth == 0:

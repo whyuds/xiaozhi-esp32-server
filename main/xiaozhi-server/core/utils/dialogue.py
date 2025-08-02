@@ -107,8 +107,13 @@ class Dialogue:
             dialogue.append({"role": "system", "content": enhanced_system_prompt})
 
         # 添加用户和助手的对话
+        system_message_found = False
         for m in self.dialogue:
-            if m.role != "system":  # 跳过原始的系统消息
-                self.getMessages(m, dialogue)
+            if m.role == "system" and not system_message_found:
+                # 跳过第一个系统消息（已在上面处理）
+                system_message_found = True
+                continue
+            # 包含后续的系统消息和所有其他消息
+            self.getMessages(m, dialogue)
 
         return dialogue

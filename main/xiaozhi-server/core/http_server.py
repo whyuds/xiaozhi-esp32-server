@@ -111,6 +111,6 @@ class SimpleHttpServer:
         # 发送对话内容
         if message:
             loop = asyncio.get_running_loop()
-            loop.run_in_executor(None, target_conn.chat, message)
+            loop.run_in_executor(None, lambda: target_conn.chat(message, role="system"))
 
         return web.json_response({"result": "ok"})
