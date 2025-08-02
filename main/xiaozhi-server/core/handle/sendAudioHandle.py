@@ -72,8 +72,11 @@ async def sendAudio(conn, audios, pre_buffer=True):
 async def send_tts_message(conn, state, text=None):
     """发送 TTS 状态消息"""
     message = {"type": "tts", "state": state, "session_id": conn.session_id}
-    if text is not None:
+    if text is not None and text != "":
         message["text"] = textUtils.check_emoji(text)
+    elif state in ["sentence_start", "sentence_end"]:
+        # 对于语音段开始和结束消息，如果没有文本则使用空字符串
+        message["text"] = ""
 
     # TTS播放结束
     if state == "stop":
