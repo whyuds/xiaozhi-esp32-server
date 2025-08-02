@@ -4,7 +4,7 @@ from openai.types import CompletionUsage
 from config.logger import setup_logging
 from core.utils.util import check_model_key
 from core.providers.llm.base import LLMProviderBase
-
+import json
 TAG = __name__
 logger = setup_logging()
 
@@ -53,6 +53,7 @@ class LLMProvider(LLMProviderBase):
 
     def response(self, session_id, dialogue, **kwargs):
         try:
+            print(json.dumps(dialogue, ensure_ascii=False))
             responses = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=dialogue,
@@ -94,6 +95,7 @@ class LLMProvider(LLMProviderBase):
 
     def response_with_functions(self, session_id, dialogue, functions=None):
         try:
+            print(json.dumps(dialogue, ensure_ascii=False))
             stream = self.client.chat.completions.create(
                 model=self.model_name, messages=dialogue, stream=True, tools=functions, extra_body=self.extra_body
             )
