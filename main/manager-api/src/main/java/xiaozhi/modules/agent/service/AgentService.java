@@ -7,6 +7,8 @@ import xiaozhi.common.page.PageData;
 import xiaozhi.common.service.BaseService;
 import xiaozhi.modules.agent.dto.AgentCreateDTO;
 import xiaozhi.modules.agent.dto.AgentDTO;
+import xiaozhi.modules.agent.dto.AgentInternalInfoDTO;
+import xiaozhi.modules.agent.dto.AgentInternalUpdateDTO;
 import xiaozhi.modules.agent.dto.AgentUpdateDTO;
 import xiaozhi.modules.agent.entity.AgentEntity;
 import xiaozhi.modules.agent.vo.AgentInfoVO;
@@ -98,4 +100,20 @@ public interface AgentService extends BaseService<AgentEntity> {
      * @return 创建的智能体ID
      */
     String createAgent(AgentCreateDTO dto);
+
+    /**
+     * 内部接口：获取智能体信息（仅返回第三方关心的字段）
+     *
+     * @param id 智能体ID
+     * @return 智能体内部信息
+     */
+    AgentInternalInfoDTO getAgentInternalInfo(String id);
+
+    /**
+     * 内部接口：更新智能体信息（仅更新第三方关心的字段）
+     *
+     * @param agentId 智能体ID
+     * @param dto     更新智能体所需的信息
+     */
+    void updateAgentInternalInfo(String agentId, AgentInternalUpdateDTO dto);
 }

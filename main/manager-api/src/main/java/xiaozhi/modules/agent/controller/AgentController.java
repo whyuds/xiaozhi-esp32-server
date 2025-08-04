@@ -38,6 +38,8 @@ import xiaozhi.modules.agent.dto.AgentChatHistoryDTO;
 import xiaozhi.modules.agent.dto.AgentChatSessionDTO;
 import xiaozhi.modules.agent.dto.AgentCreateDTO;
 import xiaozhi.modules.agent.dto.AgentDTO;
+import xiaozhi.modules.agent.dto.AgentInternalInfoDTO;
+import xiaozhi.modules.agent.dto.AgentInternalUpdateDTO;
 import xiaozhi.modules.agent.dto.AgentMemoryDTO;
 import xiaozhi.modules.agent.dto.AgentUpdateDTO;
 import xiaozhi.modules.agent.entity.AgentEntity;
@@ -241,6 +243,20 @@ public class AgentController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"play.wav\"")
                 .body(audioData);
+    }
+
+    @GetMapping("/internal/{id}")
+    @Operation(summary = "内部服务：获取智能体详情")
+    public Result<AgentInternalInfoDTO> internalGetAgentById(@PathVariable("id") String id) {
+        AgentInternalInfoDTO agent = agentService.getAgentInternalInfo(id);
+        return ResultUtils.success(agent);
+    }
+
+    @PutMapping("/internal/{id}")
+    @Operation(summary = "内部服务：更新智能体")
+    public Result<Void> internalUpdate(@PathVariable String id, @RequestBody @Valid AgentInternalUpdateDTO dto) {
+        agentService.updateAgentInternalInfo(id, dto);
+        return new Result<>();
     }
 
 }

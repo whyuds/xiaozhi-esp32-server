@@ -30,6 +30,8 @@ import xiaozhi.common.utils.JsonUtils;
 import xiaozhi.modules.agent.dao.AgentDao;
 import xiaozhi.modules.agent.dto.AgentCreateDTO;
 import xiaozhi.modules.agent.dto.AgentDTO;
+import xiaozhi.modules.agent.dto.AgentInternalInfoDTO;
+import xiaozhi.modules.agent.dto.AgentInternalUpdateDTO;
 import xiaozhi.modules.agent.dto.AgentUpdateDTO;
 import xiaozhi.modules.agent.entity.AgentEntity;
 import xiaozhi.modules.agent.entity.AgentPluginMapping;
@@ -412,5 +414,53 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         // 保存默认插件
         agentPluginMappingService.saveBatch(toInsert);
         return entity.getId();
+    }
+
+    @Override
+    public AgentInternalInfoDTO getAgentInternalInfo(String id) {
+        AgentEntity agent = this.selectById(id);
+        if (agent == null) {
+            return null;
+        }
+        
+        AgentInternalInfoDTO dto = new AgentInternalInfoDTO();
+        dto.setAgentName(agent.getAgentName());
+        dto.setSystemPrompt(agent.getSystemPrompt());
+        dto.setTtsModelId(agent.getTtsModelId());
+        dto.setTtsVoiceId(agent.getTtsVoiceId());
+        return dto;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateAgentInternalInfo(String agentId, AgentInternalUpdateDTO dto) {
+        // 先查询现有实体
+        AgentEntity existingEntity = this.selectById(agentId);
+        if (existingEntity == null) {
+            throw new RuntimeException("智能体不存在");
+        }
+
+        // 只更新提供的非空字段
+        if (dto.getAgentName() != null) {
+            existingEntity.setAgentName(dto.getAgentName());
+        }
+        if (dto.getSystemPrompt() != null) {
+            existingEntity.setSystemPrompt(dto.getSystemPrompt());
+        }
+        if (dto.getTtsModelId() != null) {
+            existingEntity.setTtsModelId(dto.getTtsModelId());
+        }
+        if (dto.getTtsVoiceId() != null) {
+            existingEntity.setTtsVoiceId(dto.getTtsVoiceId());
+        }
+
+        // 设置更新者信息
+        UserDetail user = SecurityUser.getUser();
+        if (user != null) {
+            existingEntity.setUpdater(user.getId());
+        }
+        existingEntity.setUpdatedAt(new Date());
+
+        this.updateById(existingEntity);
     }
 }
