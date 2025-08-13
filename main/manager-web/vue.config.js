@@ -48,6 +48,10 @@ module.exports = defineConfig({
         changeOrigin: true
       }
     },
+    static: {
+      directory: path.join(__dirname, 'test_page'),
+      publicPath: '/test_page',
+    },
     client: {
       overlay: false, // 不显示 webpack 错误覆盖层
     },
