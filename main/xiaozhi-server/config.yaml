@@ -57,8 +57,8 @@ log:
 
 # 使用完声音文件后删除文件(Delete the sound file when you are done using it)
 delete_audio: true
-# 没有语音输入多久后断开连接(秒)，默认2分钟，即120秒
-close_connection_no_voice_time: 120
+# 没有语音输入多久后断开连接(秒)，默认30分钟，即1740+60秒缓冲
+close_connection_no_voice_time: 1740
 # TTS请求超时时间(秒)
 tts_timeout: 10
 # 开启唤醒词加速
