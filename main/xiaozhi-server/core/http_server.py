@@ -110,6 +110,10 @@ class SimpleHttpServer:
 
         # 发送对话内容
         if message:
+            # 发送TTS开始状态消息，让设备显示"说话中"
+            from core.handle.sendAudioHandle import send_tts_message
+            await send_tts_message(target_conn, "start")
+            
             loop = asyncio.get_running_loop()
             loop.run_in_executor(None, lambda: target_conn.chat(message, role="system"))
 
