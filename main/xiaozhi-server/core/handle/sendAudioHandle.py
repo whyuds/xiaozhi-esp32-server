@@ -7,7 +7,30 @@ from core.utils import textUtils
 TAG = __name__
 
 
+def _is_websocket_connected(conn):
+    """检查WebSocket连接是否有效"""
+    if not hasattr(conn, 'websocket') or conn.websocket is None:
+        return False
+    
+    try:
+        # 检查WebSocket连接状态
+        if hasattr(conn.websocket, 'closed'):
+            return not conn.websocket.closed
+        elif hasattr(conn.websocket, 'state'):
+            return conn.websocket.state.name not in ['CLOSED', 'CLOSING']
+        else:
+            # 如果没有状态属性，假设连接有效（向后兼容）
+            return True
+    except Exception:
+        return False
+
+
 async def sendAudioMessage(conn, sentenceType, audios, text):
+    # 检查WebSocket连接状态
+    if not _is_websocket_connected(conn):
+        conn.logger.bind(tag=TAG).warning(f"WebSocket连接已断开，无法发送音频消息: {sentenceType}, {text}")
+        return
+    
     # 发送句子开始消息
     conn.logger.bind(tag=TAG).info(f"发送音频消息: {sentenceType}, {text}")
 
@@ -35,6 +58,12 @@ async def sendAudioMessage(conn, sentenceType, audios, text):
 async def sendAudio(conn, audios, pre_buffer=True):
     if audios is None or len(audios) == 0:
         return
+    
+    # 检查WebSocket连接状态
+    if not _is_websocket_connected(conn):
+        conn.logger.bind(tag=TAG).warning("WebSocket连接已断开，无法发送音频数据")
+        return
+        
     # 流控参数优化
     frame_duration = 60  # 帧时长（毫秒），匹配 Opus 编码
     start_time = time.perf_counter()
@@ -44,7 +73,14 @@ async def sendAudio(conn, audios, pre_buffer=True):
     if pre_buffer:
         pre_buffer_frames = min(3, len(audios))
         for i in range(pre_buffer_frames):
-            await conn.websocket.send(audios[i])
+            if not _is_websocket_connected(conn):
+                conn.logger.bind(tag=TAG).warning("WebSocket连接在发送预缓冲音频时断开")
+                return
+            try:
+                await conn.websocket.send(audios[i])
+            except Exception as e:
+                conn.logger.bind(tag=TAG).error(f"发送预缓冲音频失败: {e}")
+                return
         remaining_audios = audios[pre_buffer_frames:]
     else:
         remaining_audios = audios
@@ -52,6 +88,11 @@ async def sendAudio(conn, audios, pre_buffer=True):
     # 播放剩余音频帧
     for opus_packet in remaining_audios:
         if conn.client_abort:
+            break
+            
+        # 检查连接状态
+        if not _is_websocket_connected(conn):
+            conn.logger.bind(tag=TAG).warning("WebSocket连接在发送音频帧时断开")
             break
 
         # 重置没有声音的状态
@@ -64,13 +105,22 @@ async def sendAudio(conn, audios, pre_buffer=True):
         if delay > 0:
             await asyncio.sleep(delay)
 
-        await conn.websocket.send(opus_packet)
+        try:
+            await conn.websocket.send(opus_packet)
+        except Exception as e:
+            conn.logger.bind(tag=TAG).error(f"发送音频帧失败: {e}")
+            break
 
         play_position += frame_duration
 
 
 async def send_tts_message(conn, state, text=None):
     """发送 TTS 状态消息"""
+    # 检查WebSocket连接状态
+    if not _is_websocket_connected(conn):
+        conn.logger.bind(tag=TAG).warning(f"WebSocket连接已断开，无法发送TTS消息: {state}")
+        return
+        
     message = {"type": "tts", "state": state, "session_id": conn.session_id}
     if text is not None and text != "":
         message["text"] = textUtils.check_emoji(text)
@@ -92,7 +142,10 @@ async def send_tts_message(conn, state, text=None):
         conn.clearSpeakStatus()
 
     # 发送消息到客户端
-    await conn.websocket.send(json.dumps(message))
+    try:
+        await conn.websocket.send(json.dumps(message))
+    except Exception as e:
+        conn.logger.bind(tag=TAG).error(f"发送TTS消息失败: {e}")
 
 
 async def send_stt_message(conn, text):
@@ -102,6 +155,11 @@ async def send_stt_message(conn, text):
         return
 
     """发送 STT 状态消息"""
+    
+    # 检查WebSocket连接状态
+    if not _is_websocket_connected(conn):
+        conn.logger.bind(tag=TAG).warning("WebSocket连接已断开，无法发送STT消息")
+        return
     
     # 解析JSON格式，提取实际的用户说话内容
     display_text = text
@@ -119,8 +177,14 @@ async def send_stt_message(conn, text):
         # 如果不是JSON格式，直接使用原始文本
         display_text = text
     stt_text = textUtils.get_string_no_punctuation_or_emoji(display_text)
-    await conn.websocket.send(
-        json.dumps({"type": "stt", "text": stt_text, "session_id": conn.session_id})
-    )
+    
+    try:
+        await conn.websocket.send(
+            json.dumps({"type": "stt", "text": stt_text, "session_id": conn.session_id})
+        )
+    except Exception as e:
+        conn.logger.bind(tag=TAG).error(f"发送STT消息失败: {e}")
+        return
+        
     conn.client_is_speaking = True
     await send_tts_message(conn, "start")
