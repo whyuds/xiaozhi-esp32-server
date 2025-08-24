@@ -48,6 +48,8 @@ async def sendAudioMessage(conn, sentenceType, audios, text):
 
     # 发送结束消息（如果是最后一个文本）
     if conn.llm_finish_task and sentenceType == SentenceType.LAST:
+        # 延迟1秒再结束，避免语音结束过于仓促
+        await asyncio.sleep(1.0)
         await send_tts_message(conn, "stop", None)
         conn.client_is_speaking = False
         if conn.close_after_chat:
