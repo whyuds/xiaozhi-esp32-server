@@ -69,6 +69,8 @@ enable_greeting: true
 enable_stop_tts_notify: false
 # 说完话是否开启提示音，音效地址
 stop_tts_notify_voice: "config/assets/tts_notify.mp3"
+# 语音处理开关 - 控制是否进行语音识别和大模型处理
+voice_processing_enabled: true
 
 exit_commands:
   - "退出"

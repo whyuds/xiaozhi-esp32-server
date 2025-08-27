@@ -282,6 +282,11 @@ class ConnectionHandler:
             self.last_activity_time = time.time() * 1000
             await handleTextMessage(self, message)
         elif isinstance(message, bytes):
+            # 检查语音处理开关
+            if not self.config.get("voice_processing_enabled", True):
+                self.logger.bind(tag=TAG).debug("语音处理已禁用，跳过音频处理")
+                return
+                
             if self.vad is None:
                 return
             if self.asr is None:

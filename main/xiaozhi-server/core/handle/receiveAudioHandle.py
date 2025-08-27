@@ -12,6 +12,11 @@ TAG = __name__
 
 
 async def handleAudioMessage(conn, audio):
+    # 检查语音处理开关
+    if not conn.config.get("voice_processing_enabled", True):
+        conn.logger.bind(tag=TAG).debug("语音处理已禁用，跳过VAD检测")
+        return
+        
     # 当前片段是否有人说话
     have_voice = conn.vad.is_vad(conn, audio)
     # 如果设备刚刚被唤醒，短暂忽略VAD检测
@@ -39,6 +44,11 @@ async def resume_vad_detection(conn):
 
 
 async def startToChat(conn, text):
+    # 检查语音处理开关
+    if not conn.config.get("voice_processing_enabled", True):
+        conn.logger.bind(tag=TAG).debug("语音处理已禁用，跳过聊天处理")
+        return
+        
     # 检查输入是否是JSON格式（包含说话人信息）
     speaker_name = None
     actual_text = text

@@ -65,6 +65,12 @@ class SimpleHttpServer:
             app.add_routes([
                 web.post("/mcp/system_chat", self.handle_system_chat),
             ])
+            
+            # 新增语音处理开关接口
+            app.add_routes([
+                web.get("/api/voice_processing/status", self.handle_voice_processing_status),
+                web.post("/api/voice_processing/toggle", self.handle_voice_processing_toggle),
+            ])
 
             # 运行服务
             runner = web.AppRunner(app)
@@ -118,3 +124,45 @@ class SimpleHttpServer:
             loop.run_in_executor(None, lambda: target_conn.chat(message, role="system"))
 
         return web.json_response({"result": "ok"})
+
+    async def handle_voice_processing_status(self, request):
+        """获取语音处理开关状态"""
+        try:
+            # 从配置中获取当前状态
+            status = self.config.get("voice_processing_enabled", True)
+            return web.json_response({
+                "voice_processing_enabled": status,
+                "message": "语音处理已启用" if status else "语音处理已禁用"
+            })
+        except Exception as e:
+            self.logger.bind(tag=TAG).error(f"获取语音处理状态失败: {str(e)}")
+            return web.json_response({"error": str(e)}, status=500)
+
+    async def handle_voice_processing_toggle(self, request):
+        """切换语音处理开关状态"""
+        try:
+            data = await request.json()
+            new_status = data.get("enabled")
+            
+            if new_status is None:
+                # 如果没有提供enabled参数，则切换当前状态
+                current_status = self.config.get("voice_processing_enabled", True)
+                new_status = not current_status
+            
+            # 更新配置
+            self.config["voice_processing_enabled"] = new_status
+            
+            # 通知所有活动连接更新配置
+            for handler in self.ws_server.active_connections:
+                handler.config["voice_processing_enabled"] = new_status
+            
+            self.logger.bind(tag=TAG).info(f"语音处理开关已{'启用' if new_status else '禁用'}")
+            
+            return web.json_response({
+                "voice_processing_enabled": new_status,
+                "message": f"语音处理已{'启用' if new_status else '禁用'}",
+                "affected_connections": len(self.ws_server.active_connections)
+            })
+        except Exception as e:
+            self.logger.bind(tag=TAG).error(f"切换语音处理状态失败: {str(e)}")
+            return web.json_response({"error": str(e)}, status=500)

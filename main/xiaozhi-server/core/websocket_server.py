@@ -131,6 +131,13 @@ class WebSocketServer:
                     self._intent = modules["intent"]
                 if "memory" in modules:
                     self._memory = modules["memory"]
+                    
+                # 同步语音处理开关状态到所有活动连接
+                voice_processing_enabled = new_config.get("voice_processing_enabled", True)
+                for handler in self.active_connections:
+                    handler.config["voice_processing_enabled"] = voice_processing_enabled
+                    
+                self.logger.bind(tag=TAG).info(f"语音处理开关状态已同步到 {len(self.active_connections)} 个连接")
                 self.logger.bind(tag=TAG).info(f"更新配置任务执行完毕")
                 return True
         except Exception as e:
